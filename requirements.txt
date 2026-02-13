@@ -1,0 +1,11 @@
+pyautogui
+pillow
+pynput
+pytesseract
+requests
+openai
+anthropic
+google-genai
+groq
+transformers
+torch
