@@ -991,6 +991,8 @@ def on_press(key):
             pressed_keys.add("l")
         elif hasattr(key, 'char') and key.char == 'y':
             pressed_keys.add("y")
+        elif hasattr(key, 'char') and key.char == 'q':
+            pressed_keys.add("q")
 
         # macOS: CONTROL + OPTION + L
         if {"ctrl", "option", "l"}.issubset(pressed_keys):
@@ -998,6 +1000,10 @@ def on_press(key):
         # Windows: CTRL + SHIFT + Y
         elif {"ctrl", "shift", "y"}.issubset(pressed_keys):
             handle_capture()
+        # Exit: CONTROL + OPTION + Q (macOS) / CTRL + SHIFT + Q (Windows)
+        elif {"ctrl", "option", "q"}.issubset(pressed_keys) or {"ctrl", "shift", "q"}.issubset(pressed_keys):
+            print("\n👋 Exiting MCQ Bot...")
+            sys.exit(0)
 
     except AttributeError:
         pass
@@ -1015,6 +1021,8 @@ def on_release(key):
             pressed_keys.discard("l")
         elif hasattr(key, 'char') and key.char == 'y':
             pressed_keys.discard("y")
+        elif hasattr(key, 'char') and key.char == 'q':
+            pressed_keys.discard("q")
     except AttributeError:
         pass
 
@@ -1038,6 +1046,8 @@ def run():
 
     hotkey = "CONTROL + OPTION + L (macOS) / CTRL + SHIFT + Y (Windows)"
     print(f"\n➡️  Press {hotkey} to capture MCQ")
+    exit_hotkey = "CONTROL + OPTION + Q (macOS) / CTRL + SHIFT + Q (Windows)"
+    print(f"❌ Press {exit_hotkey} to exit the script")
     print(f"🖥️  Platform: {platform.system()} | {overlay_status}")
 
     # Show capture mode
@@ -1063,9 +1073,26 @@ def run():
             else:
                 print(f"⚠️  Ollama responded but may have issues")
         except:
-            print(f"❌ Cannot connect to Ollama!")
-            print(f"   Run 'ollama serve' in another terminal first")
-            print(f"   Or check if Ollama is installed: ollama list")
+            print(f"❌ Cannot connect to Ollama - attempting to start it automatically...")
+            try:
+                # Start Ollama in the background
+                subprocess.Popen(['ollama', 'serve'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                print(f"🔄 Starting Ollama server...")
+                time.sleep(5)  # Wait for Ollama to start
+
+                # Check again
+                try:
+                    test_response = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
+                    if test_response.status_code == 200:
+                        print(f"✅ Ollama started successfully!")
+                    else:
+                        print(f"⚠️  Ollama started but may have issues")
+                except:
+                    print(f"❌ Failed to start Ollama automatically")
+                    print(f"   Please run 'ollama serve' manually in another terminal")
+            except Exception as e:
+                print(f"❌ Error starting Ollama: {e}")
+                print(f"   Please run 'ollama serve' manually in another terminal")
 
     if USE_ONLINE_APIS:
         print(f"\n⚠️  Online APIs enabled (may incur costs)")
